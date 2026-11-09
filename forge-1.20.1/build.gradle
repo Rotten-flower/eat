@@ -1,0 +1,76 @@
+buildscript {
+    repositories { maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }; mavenCentral() }
+    dependencies { classpath 'org.spongepowered:mixingradle:0.7.38' }
+}
+plugins { id 'java'; id 'net.minecraftforge.gradle' version '6.0.54' }
+apply plugin: 'org.spongepowered.mixin'
+
+group = mod_group_id
+version = mod_version
+base { archivesName = "${mod_id}-forge-1.20.1" }
+java { toolchain.languageVersion = JavaLanguageVersion.of(17) }
+sourceSets.main.java.srcDir '../common/src/main/java'
+sourceSets.main.resources.srcDir '../common/src/main/resources'
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 17 }
+repositories { mavenCentral(); maven { url = 'https://api.modrinth.com/maven' } }
+if (project.hasProperty('eatCompat')) { repositories { flatDir { dirs 'work/compat' } } }
+def resourceProps = [mod_id: mod_id, mod_name: mod_name, mod_version: mod_version, mod_authors: mod_authors, mod_license: mod_license, mod_description: mod_description]
+processResources {
+    inputs.properties resourceProps
+    filesMatching(['META-INF/mods.toml', 'META-INF/neoforge.mods.toml', 'fabric.mod.json']) { expand resourceProps }
+}
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+    runs {
+        configureEach { workingDirectory project.file('run'); mods { "${mod_id}" { source sourceSets.main } } }
+        client {}
+        server { workingDirectory project.file('run-server'); args '--nogui' }
+    }
+}
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    if (project.hasProperty('profile')) runtimeOnly fg.deobf("maven.modrinth:spark:${spark_version}")
+    if (project.hasProperty('eatCompat')) {
+        runtimeOnly fg.deobf('local:alexsmobs:1.22.9')
+        runtimeOnly fg.deobf('local:citadel:2.6.3-1.20.1')
+        runtimeOnly fg.deobf('local:naturalist:5.0pre4+forge-1.20.1')
+        runtimeOnly fg.deobf('local:geckolib-forge:1.20.1-4.8.4')
+        if (!project.hasProperty('eatNoMaid')) runtimeOnly fg.deobf("local:touhoulittlemaid:${project.findProperty('eatMaidVersion') ?: '1.5.3-forge+mc1.20.1'}")
+        runtimeOnly fg.deobf('local:saintsdragons:0.9.75')
+        if (project.hasProperty('eatDoggy')) runtimeOnly fg.deobf('local:DoggyTalentsNext-1.20.1:1.19.1')
+    }
+}
+if (project.hasProperty('eatCompat')) {
+    minecraft.runs.configureEach {
+        property 'mixin.env.remapRefMap', 'true'
+        property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+    }
+}
+mixin { add sourceSets.main, 'eat.refmap.json'; config 'eat.mixins.json' }
+jar { manifest { attributes 'MixinConfigs': 'eat.mixins.json' }; finalizedBy 'reobfJar' }
+
+
+// mcscene-v2: development only; never part of the published main JAR.
+sourceSets { gameTest { compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath; runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath } }
+sourceSets.gameTest.java.srcDir '../common/src/verification/java'
+minecraft { runs { client { if (project.hasProperty('mcscene')) { workingDirectory project.file('run/mcscene-client'); mods { eat { source sourceSets.gameTest } } } } } }
+
+tasks.withType(ProcessResources).configureEach { filteringCharset = "UTF-8" }
+
+minecraft { runs { server { if (project.hasProperty('eatVerify')) {
+    workingDirectory project.file(project.findProperty('eatVerifyDir') ?: 'run-verification')
+    mods { eat { source sourceSets.gameTest } }
+    property 'eat.verify', 'true'
+    property 'eat.compat', project.hasProperty('eatCompat').toString()
+    property 'eat.profile', project.hasProperty('profile').toString()
+} } } }
+
+minecraft { runs { server { if (project.hasProperty('eatPerformance')) {
+    workingDirectory project.file('run-verification')
+    mods { eat { source sourceSets.gameTest } }
+    property 'eat.performance', 'true'
+} } } }
+
+jar { from('../LICENSE') { into 'META-INF' } }

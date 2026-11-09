@@ -1,0 +1,26 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.flower.eat.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "MobMixin",
+    "MobFeedInvoker",
+    "ServerLevelMixin",
+    "TadpoleFoodInvoker",
+    "OcelotTrustInvoker",
+    "ItemEntityEatingMixin",
+    "ItemEntityDataMixin",
+    "FollowTemptationMixin",
+    "TemptGoalMixin",
+    "PlayerFeedingMixin",
+    "PlayerFeedingDataMixin"
+  ],
+  "client": [
+    "client.EatingItemRendererMixin",
+    "client.PlayerEatingControlMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

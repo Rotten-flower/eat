@@ -1,0 +1,4 @@
+{
+  "eat.description": "生物会吃地上的食物，效果遵循原版喂食规则。",
+  "eat.feeding.hands_full": "对方需要空出一只手才能接过食物。"
+}

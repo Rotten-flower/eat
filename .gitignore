@@ -1,0 +1,13 @@
+**/.gradle/
+**/build/
+**/run*/
+**/.idea/
+*.iml
+work/
+dist/
+AGENTS.md
+CURRENT.md
+VALIDATION.md
+release.json
+tools/
+fabric-1.21.1/

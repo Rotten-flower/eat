@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "eat_verification",
+  "version": "0.1.0",
+  "environment": "server",
+  "name": "Native feeding checks",
+  "entrypoints": {
+    "main": [
+      "dev.flower.eat.verification.FabricServerChecks"
+    ]
+  },
+  "depends": {
+    "eat": "*",
+    "fabric-api": "*"
+  }
+}

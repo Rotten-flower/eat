@@ -1,0 +1,53 @@
+plugins { id 'fabric-loom' version '1.10.5' }
+
+group = mod_group_id
+version = mod_version
+base { archivesName = "${mod_id}-fabric-1.20.1" }
+java { toolchain.languageVersion = JavaLanguageVersion.of(17) }
+sourceSets.main.java.srcDir '../common/src/main/java'
+sourceSets.main.resources.srcDir '../common/src/main/resources'
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 17 }
+repositories { mavenCentral(); maven { url = 'https://api.modrinth.com/maven' } }
+def resourceProps = [mod_id: mod_id, mod_name: mod_name, mod_version: mod_version, mod_authors: mod_authors, mod_license: mod_license, mod_description: mod_description]
+processResources {
+    inputs.properties resourceProps
+    filesMatching(['META-INF/mods.toml', 'META-INF/neoforge.mods.toml', 'fabric.mod.json']) { expand resourceProps }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    if (project.hasProperty('profile')) modLocalRuntime "maven.modrinth:spark:${spark_version}"
+}
+loom { runs { client { runDir 'run' }; server { runDir 'run-server'; programArg '--nogui' } } }
+
+// mcscene-v2: development only; never part of the published main JAR.
+if (project.hasProperty('mcscene')) {
+sourceSets { mcscene { compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath; runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath } }
+loom { mods { eat_mcscene { sourceSet sourceSets.mcscene } }; runs { client { source sourceSets.mcscene; runDir 'run/mcscene-client' } } }
+}
+
+tasks.withType(JavaExec).configureEach { javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(17) } }
+
+tasks.withType(ProcessResources).configureEach { filteringCharset = "UTF-8" }
+
+loom { mixin { defaultRefmapName = 'eat.refmap.json' } }
+
+if (project.hasProperty('eatVerify')) {
+    sourceSets { verification {
+        java.srcDir '../common/src/verification/java'
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    } }
+    loom {
+        mods { eat { sourceSet sourceSets.main }; eat_verification { sourceSet sourceSets.verification } }
+        runs { verification {
+            server(); source sourceSets.verification; runDir 'run-verification'
+            vmArg '-Deat.verify=true'; vmArg '-Deat.compat=true'; programArg '--nogui'
+        } }
+    }
+}
+
+jar { from('../LICENSE') { into 'META-INF' } }

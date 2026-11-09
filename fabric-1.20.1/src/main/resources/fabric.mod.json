@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
+  "authors": [
+    "${mod_authors}"
+  ],
+  "license": "${mod_license}",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.flower.eat.ModEntrypoint"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.14",
+    "minecraft": "1.20.1",
+    "java": ">=17",
+    "fabric-api": "*"
+  },
+  "mixins": [
+    "eat.mixins.json"
+  ],
+  "icon": "assets/eat/icon.png",
+  "contact": {
+    "homepage": "https://github.com/Rotten-flower/eat",
+    "sources": "https://github.com/Rotten-flower/eat",
+    "issues": "https://github.com/Rotten-flower/eat/issues"
+  }
+}
